@@ -13,9 +13,20 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Preprocesado
 
+## 0. Paquetes de R
+
 ```{r}
+# Instalamos e iniamos el paquete tidyverse
+#install.packages("tidyverse")
 library(tidyverse)
+
+# Instalamos e iniamos el paquete mice
+#install.packages("mice")
+library(mice)
 ```
+
+Se utilizan los paquetes tidyverse y mice. Este último nos será de utilidad durante la limpieza de nuestros datos.
+Por lo tanto, el resto de funciones están o creadas para este caso o incluidas en R básico.
 
 ## 1. Integración
 
@@ -24,8 +35,11 @@ library(tidyverse)
 Extramos el data frame del archivo .csv:
 
 ```{r}
-df<-read.csv("./data/StudentsPerformance.csv",stringsAsFactors = TRUE, na.strings = "", header = TRUE)
+df<-read.csv("./data/StudentsPerformance.csv",stringsAsFactors = TRUE
+             , na.strings = "", header = TRUE)
 ```
+
+### 1.2. Dimensiones y tipo de datos
 
 Veamos las dimensiones del data frame:
 
@@ -41,6 +55,8 @@ str(df)
 
 Como se puede observar, en 5 de las columnas los valores son factores y en 3 de ellas, son valores enteros.
 
+### 1.3. Transformación de los nombres de las columnas
+
 Debido a que los nombres de algunas columnas son demasiado largas, vamos a cambiarlos para que sean más accesibles los datos:
 
 ```{r}
@@ -48,6 +64,8 @@ data <- df
 colnames(data) <- c('Gender','Ethnicity','Parent_Education','Lunch','Preparation',
                     'Math','Reading','Writing')
 ```
+
+### 1.4. Visión general de los datos
 
 Vamos a ver cuáles son los niveles de cada uno de los factores:
 
@@ -59,8 +77,8 @@ dataLevels
 A continuación, vamos visualizar los fragmentos inicial y final de la tabla:
 
 ```{r}
-knitr::kable(head(data,n=10))
-knitr::kable(tail(data,n=10))
+knitr::kable(head(data,n=5))
+knitr::kable(tail(data,n=5))
 ```
 
 Por último, vamos a ver un resumen del dataframe:
@@ -71,10 +89,11 @@ summary(data)
 
 Como se puede comprobar de la información recibida, en principio no habría ninguna fila a la que le falte un valor en alguna columna de factor.
 
-Antes de terminar con este apartado, vamos a guardar nuestro data frame en un archivo RData:
+Antes de terminar con este apartado, vamos a guardar nuestro data frame y los niveles de los factores en archivos RData:
 
 ```{r}
-save(data, file = "students.RData")
+save(data, file = "data.RData")
+save(dataLevels, file = "dataLevels.RData")
 ```
 
 ## 2. Visualización
@@ -84,55 +103,132 @@ save(data, file = "students.RData")
 Vamos a comenzar la visualización con los factores.
 
 ```{r}
-mujeres <- data[data$Gender == dataLevels$Gender[1],]
-hombres <- data[data$Gender == dataLevels$Gender[2],]
+# Porcentaje por género
+pct_gender <- data %>%
+  summarise(
+    pct_female = 100*(sum(data$Gender==dataLevels$Gender[1])/dim(data)[1]),
+    pct_male = 100*(sum(data$Gender==dataLevels$Gender[2])/dim(data)[1]),
+    .groups = "drop"
+  ) 
 
-pctGender <- round(100*c(nrow(mujeres), nrow(hombres))/sum(c(nrow(mujeres), nrow(hombres))))
+rownames(pct_gender)<-c("Porcentajes")
+colnames(pct_gender)<-c("Mujeres", "Hombres")
 
-pie(c(nrow(mujeres), nrow(hombres)), labels = paste(dataLevels$Gender, sep = " ", "[", pctGender, "%]"), main = "Estudiantes por género")
+pct_gender <- as.data.frame(pct_gender)
+
+knitr::kable(pct_gender)
 ```
 
 ```{r}
-group_a <- data[data$Ethnicity == dataLevels$Ethnicity[1],]
-group_b <- data[data$Ethnicity == dataLevels$Ethnicity[2],]
-group_c <- data[data$Ethnicity == dataLevels$Ethnicity[3],]
-group_d <- data[data$Ethnicity == dataLevels$Ethnicity[4],]
-group_e <- data[data$Ethnicity == dataLevels$Ethnicity[5],]
+# Porcentaje por etnia
+pct_ethnicity <- data %>%
+  summarise(
+    pct_a = 100*(sum(data$Ethnicity == dataLevels$Ethnicity[1])/dim(data)[1]),
+    pct_b = 100*(sum(data$Ethnicity == dataLevels$Ethnicity[2])/dim(data)[1]),
+    pct_c = 100*(sum(data$Ethnicity == dataLevels$Ethnicity[3])/dim(data)[1]),
+    pct_d = 100*(sum(data$Ethnicity == dataLevels$Ethnicity[4])/dim(data)[1]),
+    pct_e = 100*(sum(data$Ethnicity == dataLevels$Ethnicity[5])/dim(data)[1]),
+    .groups = "drop"
+  ) 
 
-pctEthnicity <- round(100*c(nrow(group_a), nrow(group_b),nrow(group_c), nrow(group_d), nrow(group_e))/sum(c(nrow(group_a), nrow(group_b),nrow(group_c), nrow(group_d), nrow(group_e))))
+rownames(pct_ethnicity)<-c("Porcentajes")
+colnames(pct_ethnicity)<-c("Group A","Group B","Group C","Group D","Group E")
 
-pie(c(nrow(group_a), nrow(group_b),nrow(group_c), nrow(group_d), nrow(group_e)), labels = paste(dataLevels$Ethnicity, sep = " ", "[", pctEthnicity, "%]"), main = "Estudiantes por etnia")
+pct_ethnicity <- as.data.frame(pct_ethnicity)
+
+knitr::kable(pct_ethnicity)
 ```
 
 ```{r}
-ed_a <- data[data$Parent_Education == dataLevels$Parent_Education[1],]
-ed_b <- data[data$Parent_Education == dataLevels$Parent_Education[2],]
-ed_c <- data[data$Parent_Education == dataLevels$Parent_Education[3],]
-ed_d <- data[data$Parent_Education == dataLevels$Parent_Education[4],]
-ed_e <- data[data$Parent_Education == dataLevels$Parent_Education[5],]
-ed_f <- data[data$Parent_Education == dataLevels$Parent_Education[6],]
+# Porcentaje por educación de los padres
+pct_ed <- data %>%
+  summarise(
+    pct_a = 100*(sum(data$Parent_Education == dataLevels$Parent_Education[1])
+                 /dim(data)[1]),
+    pct_b = 100*(sum(data$Parent_Education == dataLevels$Parent_Education[2])
+                 /dim(data)[1]),
+    pct_c = 100*(sum(data$Parent_Education == dataLevels$Parent_Education[3])
+                 /dim(data)[1]),
+    pct_d = 100*(sum(data$Parent_Education == dataLevels$Parent_Education[4])
+                 /dim(data)[1]),
+    pct_e = 100*(sum(data$Parent_Education == dataLevels$Parent_Education[5])
+                 /dim(data)[1]),
+    pct_f = 100*(sum(data$Parent_Education == dataLevels$Parent_Education[6])
+                 /dim(data)[1]),
+    .groups = "drop"
+  ) 
 
-pctEd <- round(100*c(nrow(ed_a), nrow(ed_b),nrow(ed_c), nrow(ed_d), nrow(ed_e), nrow(ed_f))/sum(c(nrow(ed_a), nrow(ed_b),nrow(ed_c), nrow(ed_d), nrow(ed_e), nrow(ed_f))))
+rownames(pct_ed)<-c("Porcentajes")
+colnames(pct_ed)<-c("Associate's degree","Bachelor's degree","High school"
+                    ,"Master's degree","Some college","Some high school")
 
-pie(c(nrow(ed_a), nrow(ed_b),nrow(ed_c), nrow(ed_d), nrow(ed_e), nrow(ed_f)), labels = paste(dataLevels$Parent_Education, sep = " ", "[", pctEd, "%]"), main = "Estudiantes según educación de los padres")
+pct_ed <- as.data.frame(pct_ed)
+
+knitr::kable(pct_ed)
 ```
 
 ```{r}
-com_reducida <- data[data$Lunch == dataLevels$Lunch[1],]
-com_completa <- data[data$Lunch == dataLevels$Lunch[2],]
+# Porcentaje por almuerzo
+pct_lunch <- data %>%
+  summarise(
+    pct_free = 100*(sum(data$Lunch == dataLevels$Lunch[1])/dim(data)[1]),
+    pct_standard = 100*(sum(data$Lunch == dataLevels$Lunch[2])/dim(data)[1]),
+    .groups = "drop"
+  ) 
 
-pctLunch <- round(100*c(nrow(com_reducida), nrow(com_completa))/sum(c(nrow(com_reducida), nrow(com_completa))))
+rownames(pct_lunch)<-c("Porcentajes")
+colnames(pct_lunch)<-c("Free/Reduced","Standard")
 
-pie(c(nrow(com_reducida), nrow(com_completa)), labels = paste(dataLevels$Lunch, sep = " ", "[", pctLunch, "%]"), main = "Estudiantes según su comida previa a las pruebas")
+pct_lunch <- as.data.frame(pct_lunch)
+
+knitr::kable(pct_lunch)
 ```
 
 ```{r}
-prep_ninguna <- data[data$Preparation == dataLevels$Preparation[1],]
-prep_completa <- data[data$Preparation == dataLevels$Preparation[2],]
+# Porcentaje por preparación
+pct_prep <- data %>%
+  summarise(
+    pct_ninguna = 100*(sum(data$Preparation == dataLevels$Preparation[1])
+                       /dim(data)[1]),
+    pct_completa = 100*(sum(data$Preparation == dataLevels$Preparation[2])
+                        /dim(data)[1]),
+    .groups = "drop"
+  ) 
 
-pctPrep <- round(100*c(nrow(com_reducida), nrow(com_completa))/sum(c(nrow(com_reducida), nrow(com_completa))))
+rownames(pct_prep)<-c("Porcentajes")
+colnames(pct_prep)<-c("Completed","None")
 
-pie(c(nrow(prep_ninguna), nrow(prep_completa)), labels = paste(dataLevels$Preparation, sep = " ", "[", pctPrep, "%]"), main = "Estudiantes según su preparación previa a las pruebas")
+pct_prep <- as.data.frame(pct_prep)
+
+knitr::kable(pct_prep)
+```
+
+```{r}
+# Modificación de los parámetros gráficos
+par(mfrow = c(3,2),
+    mar = c(0.5,0,1,0))
+
+# Gráficos de los factores según porcentaje
+pie(c(pct_gender[1,1], pct_gender[1,2]), labels = paste(dataLevels$Gender, 
+                                                        sep = " ", "[", pct_gender, 
+                                                        "%]"), main = "Según género")
+
+pie(c(pct_ethnicity[1,1], pct_ethnicity[1,2],pct_ethnicity[1,3], pct_ethnicity[1,4],
+      pct_ethnicity[1,5]), labels = paste(dataLevels$Ethnicity, sep = " ", "[", 
+                                          pct_ethnicity, 
+                                          "%]"), main = "Según etnia")
+
+pie(c(pct_ed[1,1], pct_ed[1,2],pct_ed[1,3], pct_ed[1,4],pct_ed[1,5], pct_ed[1,6]), 
+    labels = paste(dataLevels$Parent_Education, sep = " ", "[", pct_ed, "%]"), 
+    main = "Según educación de los padres")
+
+pie(c(pct_lunch[1,1], pct_lunch[1,2]), labels = paste(dataLevels$Lunch, sep = " ", 
+                                                      "[", pct_lunch, "%]"), 
+    main = "Según comida")
+
+pie(c(pct_prep[1,1], pct_prep[1,2]), labels = paste(dataLevels$Preparation, sep = " ", 
+                                                    "[", pct_prep, "%]"), 
+    main = "Según su preparación")
 ```
 
 ### 2.2. Valores numéricos
@@ -140,73 +236,66 @@ pie(c(nrow(prep_ninguna), nrow(prep_completa)), labels = paste(dataLevels$Prepar
 Vamos a continuar con la visualización de los valores numéricos, comenzando con un histograma de cada uno de las puntuaciones de cada uno de los tests.
 
 ```{r}
-hist(data$Math, main = "Puntuaciones en test de matemáticas", xlab = "Puntuación",col = "yellow")
+hist(data$Math, main = "Puntuaciones en test de matemáticas", xlab = "Puntuación",
+     col = "yellow")
 ```
 
 Como se puede observar en el histograma, el rango de puntuación más repetido en el test de matemáticas se encuentra entre los 60 y 70 puntos.
 
 ```{r}
-hist(data$Reading, main = "Puntuaciones en test de lectura", xlab = "Puntuación",col = "blue")
+hist(data$Reading, main = "Puntuaciones en test de lectura", xlab = "Puntuación",
+     col = "blue")
 ```
 
 Según este histograma, el rango de puntuación más repetido en el test de lectura se encuentra entre los 70 y 80 puntos, seguido de cerca por el rango entre los 60 y 70.
 
 ```{r}
-hist(data$Writing, main = "Puntuaciones en test de redacción", xlab = "Puntuación",col = "red")
+hist(data$Writing, main = "Puntuaciones en test de redacción", xlab = "Puntuación",
+     col = "red")
 ```
 
 Según el histograma del test de redacción, el rango de puntuación más repetido entre los 70 y 80 puntos, seguido de cerca por el rango entre los 60 y 70.
 
 Como se puede observar de los tres histogramas, nos encontramos con que los valores anteriores al 30 parecen ser outliers. Por este motivo, durante la limpieza se buscarán estos valores.
 
-Vamos a continuar con la relación de aprobados y suspensos. Para obtener estos datos por asignatura se ha creado la función "score_stats", en la que se ha puesto como nota mínima para aprobar un 50 sobre 100.
+Vamos a continuar con la relación de aprobados y suspensos. Para obtener estos datos por asignatura se ha puesto como nota mínima para aprobar un 50 sobre 100.
 
 ```{r}
-score_stats <- function(asig, aprobado = 50){
-  res <- c(length(asig[asig >= aprobado]), length(asig[asig < aprobado]))
-  
-  return(res)
-}
+pass <- 50
 ```
 
 ```{r}
-math_stats <- score_stats(data$Math)
-math_stats
-```
+test_pass <- data %>%
+  summarise(
+    count_math = sum(Math>=pass),
+    count_reading = sum(Reading>=pass),
+    count_writing = sum(Writing>=pass),
+    .groups = "drop"
+  ) 
 
-Los resultados del test de matemáticas son: {aprobados:`r math_stats[1]`, suspensos:`r math_stats[2]`}.
+test_fail <- data %>%
+  summarise(
+    count_math = sum(Math<pass),
+    count_reading = sum(Reading<pass),
+    count_writing = sum(Writing<pass),
+    .groups = "drop"
+  ) 
 
-```{r}
-reading_stats <- score_stats(data$Reading)
-reading_stats
-```
+tests_stats <- rbind(test_pass,test_fail)
 
-Los resultados del test de lectura son: {aprobados:`r reading_stats[1]`, suspensos:`r reading_stats[2]`}.
-
-```{r}
-writing_stats <- score_stats(data$Writing)
-writing_stats
-```
-
-Los resultados del test de lectura son: {aprobados:`r writing_stats[1]`, suspensos:`r writing_stats[2]`}.
-
-```{r}
-aux_tests_stats <- cbind(math_stats,reading_stats,writing_stats)
-
-rownames(aux_tests_stats)<-c("Aprobado","Suspenso")
-colnames(aux_tests_stats)<-c("Matematicas", "Lectura","Redaccion")
-
-tests_stats <- as.data.frame(aux_tests_stats)
+rownames(tests_stats)<-c("Aprobado","Suspenso")
+colnames(tests_stats)<-c("Matematicas", "Lectura","Redaccion")
 
 knitr::kable(tests_stats)
 ```
 
-Como se puede observar, han aprobado en cada test más de un 85% del total, siendo además cantidades similares de aprobados.
+Como se puede observar, han aprobado en cada test más de un 85% del total, siendo además cantidades similares de aprobados. Además, la asignatura con el mayor número de aprobados es lectura, con 910 estudiantes aprobados.
 
 ```{r}
 par(mar = c(5,4,4,10))
 
-barplot(cbind(as.numeric(tests_stats[1,]),as.numeric(tests_stats[2,])) ~ c("Matemáticas","Lectura","Redacción"),
+barplot(cbind(as.numeric(tests_stats[1,]),as.numeric(tests_stats[2,])) ~ 
+          c("Matemáticas","Lectura","Redacción"),
         xlab = "Asignaturas",
         ylab = "Número de estudiantes",
         ylim = c(0, 1000),
@@ -217,18 +306,21 @@ barplot(cbind(as.numeric(tests_stats[1,]),as.numeric(tests_stats[2,])) ~ c("Mate
 ```
 
 ```{r}
-pct_math <- round(100*c(tests_stats[1,1],tests_stats[2,1]))/sum(c(tests_stats[1,1], tests_stats[2,1]))
+pct_tests <- NULL
 
-pct_reading <- round(100*c(tests_stats[1,2],tests_stats[2,2]))/sum(c(tests_stats[1,2], tests_stats[2,2]))
+for (k in 1:dim(tests_stats)[2]) {
+  pct <- round(100*c(as.numeric(tests_stats[,k])))/sum(c(as.numeric(tests_stats[,k])))
+  if (is.null(pct_tests)) {
+    pct_tests <- pct
+  } else {
+    pct_tests <- cbind(pct_tests,pct) 
+  }
+}
 
-pct_writing <- round(100*c(tests_stats[1,3],tests_stats[2,3]))/sum(c(tests_stats[1,3], tests_stats[2,3]))
+rownames(pct_tests)<-c("Aprobado","Suspenso")
+colnames(pct_tests)<-c("Matematicas", "Lectura","Redaccion")
 
-aux_pct_tests <- cbind(pct_math,pct_reading,pct_writing)
-
-rownames(aux_pct_tests)<-c("Aprobado","Suspenso")
-colnames(aux_pct_tests)<-c("Matematicas", "Lectura","Redaccion")
-
-pct_tests <- as.data.frame(aux_pct_tests)
+pct_tests <- as.data.frame(pct_tests)
 
 knitr::kable(pct_tests)
 ```
@@ -236,7 +328,13 @@ knitr::kable(pct_tests)
 Al realizar los porcentajes de los resultados, podemos confirmar que el mínimo porcentaje de aprobados es en el test de matemáticas con un 86,5% y el máximo es del 91% en el caso del test de lectura.
 
 ```{r}
-pie(c(sum(c(pct_tests[1,1], pct_tests[1,2], pct_tests[1,3]))/3, sum(c(pct_tests[2,1], pct_tests[2,2], pct_tests[2,3]))/3), col = rainbow(dim(tests_stats)[1]),labels = paste(c("Aprobado", "Suspenso"), sep = " ", "[", c(sum(c(pct_tests[1,1], pct_tests[1,2], pct_tests[1,3]))/3, sum(c(pct_tests[2,1], pct_tests[2,2], pct_tests[2,3]))/3), "%]"), main = "Estudiantes según resultados totales")
+pct_pass <- mean(as.numeric(pct_tests[1,]))
+
+pct_fail <- mean(as.numeric(pct_tests[2,]))
+
+pie(c(pct_pass, pct_fail), col = rainbow(dim(tests_stats)[1]),
+    labels = paste(rownames(tests_stats), sep = " ", "[", c(c(pct_pass, pct_fail)), 
+                   "%]"), main = "Estudiantes según resultados totales")
 ```
 
 ### 2.2.1. Correlación entre puntuaciones
@@ -244,70 +342,67 @@ pie(c(sum(c(pct_tests[1,1], pct_tests[1,2], pct_tests[1,3]))/3, sum(c(pct_tests[
 Vamos a ver la correlación entre las puntuaciones de los tests:
 
 ```{r}
-cor_score <- cor(data[,6:8])
-knitr::kable(cor_score)
+knitr::kable(cor(data[,6:8]))
 ```
 
 Como se puede obsevar en la tabla, los tests con mayor correlación son el de lectura y el de redacción, aunque existe una gran correlación entre todos los tests. Para poder visualizar esta correlación de una manera gráfica se han creado los diagramas de puntos que aparecen a continuación:
 
 ```{r}
 plot(data$Math, data$Reading,
-     main = "Diagrama de puntos de puntuaciones en matemáticas y lectura",
+     main = "Relación de puntuaciones en matemáticas y lectura",
      col = "dark green",
      xlab = "Puntuación en matemáticas",
      ylab = "Puntuación en lectura")
-```
 
-```{r}
+abline(lm(data$Reading ~ data$Math))
+
 plot(data$Math, data$Writing,
-     main = "Diagrama de puntos de puntuaciones en matemáticas y redacción",
+     main = "Relación de puntuaciones en matemáticas y redacción",
      col = "orange",
      xlab = "Puntuación en matemáticas",
      ylab = "Puntuación en redacción")
-```
 
-```{r}
+abline(lm(data$Writing ~ data$Math))
+
 plot(data$Reading, data$Writing,
-     main = "Diagrama de puntos de puntuaciones en lectura y redacción",
+     main = "Relación de puntuaciones en lectura y redacción",
      col = "purple",
      xlab = "Puntuación en lectura",
      ylab = "Puntuación en redacción") 
+
+abline(lm(data$Writing ~ data$Reading))
 ```
 
 ### 2.3. General (Aprobados)
 
-Vamos a comenzar a visualizar la relación entre las personas aprobadas y los distintos factores. Para ello, se ha establecido que la puntuación mínima para aprobar sea 50 puntos sobre 100.
-
-```{r}
-aprobado <- 50
-```
+Vamos a comenzar a visualizar la relación entre las personas aprobadas y los distintos factores.
 
 ### 2.3.1. Resultados por género
 
 En primer lugar, vamos a comprobar si existe alguna diferencia significativa entres los hombres y las mujeres en los resultados de los tests.
 
 ```{r}
-female_tests <- data[data$Gender==dataLevels$Gender[1],] %>%
+gender_tests <- NULL
+
+for (k in 1:length(dataLevels$Gender)) {
+  aux_gender <- data[data$Gender==dataLevels$Gender[k],] %>%
   summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
+    count_math = sum(Math>=pass),
+    count_reading = sum(Reading>=pass),
+    count_writing = sum(Writing>=pass),
     .groups = "drop"
   ) 
-
-male_tests <- data[data$Gender==dataLevels$Gender[2],] %>%
-  summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
-    .groups = "drop"
-  ) 
-
-
-gender_tests <- rbind(female_tests,male_tests)
+  if (is.null(gender_tests)) {
+    gender_tests <- aux_gender
+  } else {
+    gender_tests <- rbind(gender_tests,aux_gender) 
+  }
+}
 
 rownames(gender_tests)<-c("Mujer","Hombre")
 colnames(gender_tests)<-c("Matematicas", "Lectura","Redaccion")
+
+gender_tests <- as.data.frame(gender_tests)
 
 knitr::kable(gender_tests)
 ```
@@ -317,11 +412,12 @@ Como se puede observar, las mujeres se muestran superiores en los campos de lect
 ```{r}
 par(mar = c(5,4,4,10))
 
-barplot(cbind(as.numeric(gender_tests[1,]),as.numeric(gender_tests[2,])) ~ c("Matematicas","Lectura","Redaccion"),
+barplot(cbind(as.numeric(gender_tests[1,]),as.numeric(gender_tests[2,])) ~ 
+          c("Matematicas","Lectura","Redaccion"),
         beside = TRUE,
         xlab = "Asignaturas",
         ylab = "Numero de estudiantes",
-        ylim = c(0, 1000),
+        ylim = c(0, 500),
         col = rainbow(dim(gender_tests)[1]),
         legend.text = c("Mujeres", "Hombres"),
         args.legend = list(x = "right", bty="n", inset=c(-0.30,0), xpd = TRUE),
@@ -333,50 +429,27 @@ barplot(cbind(as.numeric(gender_tests[1,]),as.numeric(gender_tests[2,])) ~ c("Ma
 En segundo lugar, vamos a comprobar si existe alguna relación entre los miembros de una etnia y sus resultados de los tests.
 
 ```{r}
-a_tests <- data[data$Ethnicity==dataLevels$Ethnicity[1],] %>%
+ethnicity_tests <- NULL
+
+for (k in 1:length(dataLevels$Ethnicity)) {
+  aux_ethnicity <- data[data$Ethnicity==dataLevels$Ethnicity[k],] %>%
   summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
+    count_math = sum(Math>=pass),
+    count_reading = sum(Reading>=pass),
+    count_writing = sum(Writing>=pass),
     .groups = "drop"
   ) 
-
-b_tests <- data[data$Ethnicity==dataLevels$Ethnicity[2],] %>%
-  summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
-    .groups = "drop"
-  ) 
-
-c_tests <- data[data$Ethnicity==dataLevels$Ethnicity[3],] %>%
-  summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
-    .groups = "drop"
-  ) 
-
-d_tests <- data[data$Ethnicity==dataLevels$Ethnicity[4],] %>%
-  summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
-    .groups = "drop"
-  ) 
-
-d_tests <- data[data$Ethnicity==dataLevels$Ethnicity[5],] %>%
-  summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
-    .groups = "drop"
-  ) 
-
-ethnicity_tests <- rbind(a_tests,b_tests,c_tests,d_tests,d_tests)
+  if (is.null(ethnicity_tests)) {
+    ethnicity_tests <- aux_ethnicity
+  } else {
+    ethnicity_tests <- rbind(ethnicity_tests,aux_ethnicity) 
+  }
+}
 
 rownames(ethnicity_tests)<-c("Group A","Group B","Group C","Group D","Group E")
 colnames(ethnicity_tests)<-c("Matematicas", "Lectura","Redaccion")
+
+ethnicity_tests <- as.data.frame(ethnicity_tests)
 
 knitr::kable(ethnicity_tests)
 ```
@@ -386,11 +459,14 @@ Como se puede observar, el grupo que ha obtenido el mejor conjunto de resultados
 ```{r}
 par(mar = c(5,4,4,10))
 
-barplot(cbind(as.numeric(ethnicity_tests[1,]),as.numeric(ethnicity_tests[2,]),as.numeric(ethnicity_tests[3,]),as.numeric(ethnicity_tests[4,]),as.numeric(ethnicity_tests[5,])) ~ c("Matematicas","Lectura","Redaccion"),
+barplot(cbind(as.numeric(ethnicity_tests[1,]),as.numeric(ethnicity_tests[2,]),
+              as.numeric(ethnicity_tests[3,]),as.numeric(ethnicity_tests[4,]),
+              as.numeric(ethnicity_tests[5,])) ~ 
+          c("Matematicas","Lectura","Redaccion"),
         beside = TRUE,
         xlab = "Asignaturas",
         ylab = "Numero de estudiantes",
-        ylim = c(0, 1000),
+        ylim = c(0, 300),
         col = rainbow(dim(ethnicity_tests)[1]),
         legend.text = c("Group A","Group B","Group C","Group D","Group E"),
         args.legend = list(x = "right", bty="n", inset=c(-0.30,0), xpd = TRUE),
@@ -400,58 +476,28 @@ barplot(cbind(as.numeric(ethnicity_tests[1,]),as.numeric(ethnicity_tests[2,]),as
 ### 2.3.3. Resultados según los estudios de los padres
 
 ```{r}
-associate_tests <- data[data$Parent_Education==dataLevels$Parent_Education[1],] %>%
+parent_tests <- NULL
+
+for (k in 1:length(dataLevels$Parent_Education)) {
+  aux_parent <- data[data$Parent_Education==dataLevels$Parent_Education[k],] %>%
   summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
+    count_math = sum(Math>=pass),
+    count_reading = sum(Reading>=pass),
+    count_writing = sum(Writing>=pass),
     .groups = "drop"
   ) 
+  if (is.null(parent_tests)) {
+    parent_tests <- aux_parent
+  } else {
+    parent_tests <- rbind(parent_tests,aux_parent) 
+  }
+}
 
-bachelor_tests <- data[data$Parent_Education==dataLevels$Parent_Education[2],] %>%
-  summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
-    .groups = "drop"
-  ) 
-
-high_tests <- data[data$Parent_Education==dataLevels$Parent_Education[3],] %>%
-  summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
-    .groups = "drop"
-  ) 
-
-master_tests <- data[data$Parent_Education==dataLevels$Parent_Education[4],] %>%
-  summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
-    .groups = "drop"
-  ) 
-
-college_tests <- data[data$Parent_Education==dataLevels$Parent_Education[5],] %>%
-  summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
-    .groups = "drop"
-  ) 
-
-shigh_tests <- data[data$Parent_Education==dataLevels$Parent_Education[6],] %>%
-  summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
-    .groups = "drop"
-  ) 
-
-parent_tests <- rbind(associate_tests,bachelor_tests,high_tests,master_tests,college_tests,shigh_tests)
-
-rownames(parent_tests)<-c("Associate's degree","Bachelor's degree","High school","Master's degree","Some college","Some high school")
+rownames(parent_tests)<-c("Associate's degree","Bachelor's degree","High school",
+                          "Master's degree","Some college","Some high school")
 colnames(parent_tests)<-c("Matematicas", "Lectura","Redaccion")
+
+parent_tests <- as.data.frame(parent_tests)
 
 knitr::kable(parent_tests)
 ```
@@ -459,15 +505,19 @@ knitr::kable(parent_tests)
 Como se puede observar, los valores obtenidos son proporcionales a la cantidad de personas total que forma cada grupo. De la misma manera, hay una cantidad similar de perrsonas que han aprobado en cada uno de los tests por cada uno de los niveles de educación.
 
 ```{r}
-par(mar = c(5,4,4,10))
+par(mar = c(5,4,4,8))
 
-barplot(cbind(as.numeric(parent_tests[1,]),as.numeric(parent_tests[2,]),as.numeric(parent_tests[3,]),as.numeric(parent_tests[4,]),as.numeric(parent_tests[5,]),as.numeric(parent_tests[6,])) ~ c("Matematicas","Lectura","Redaccion"),
+barplot(cbind(as.numeric(parent_tests[1,]),as.numeric(parent_tests[2,]),
+              as.numeric(parent_tests[3,]),as.numeric(parent_tests[4,]),
+              as.numeric(parent_tests[5,]),as.numeric(parent_tests[6,])) ~ 
+          c("Matematicas","Lectura","Redaccion"),
         beside = TRUE,
         xlab = "Asignaturas",
         ylab = "Numero de estudiantes",
-        ylim = c(0, 1000),
+        ylim = c(0, 300),
         col = rainbow(dim(parent_tests)[1]),
-        legend.text = c("Associate's degree","Bachelor's degree","High school","Master's degree","Some college","Some high school"),
+        legend.text = c("Associate's degree","Bachelor's degree","High school",
+                        "Master's degree","Some college","Some high school"),
         args.legend = list(x = "right", bty="n", inset=c(-0.40,0), xpd = TRUE),
         main = "Aprobados según la educación de los padres")
 ```
@@ -475,27 +525,27 @@ barplot(cbind(as.numeric(parent_tests[1,]),as.numeric(parent_tests[2,]),as.numer
 ### 2.3.4. Resultados según el almuerzo previo a los tests
 
 ```{r}
-free_tests <- data[data$Lunch==dataLevels$Lunch[1],] %>%
+lunch_tests <- NULL
+
+for (k in 1:length(dataLevels$Lunch)) {
+  aux_lunch <- data[data$Lunch==dataLevels$Lunch[k],] %>%
   summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
+    count_math = sum(Math>=pass),
+    count_reading = sum(Reading>=pass),
+    count_writing = sum(Writing>=pass),
     .groups = "drop"
   ) 
-
-standart_tests <- data[data$Lunch==dataLevels$Lunch[2],] %>%
-  summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
-    .groups = "drop"
-  ) 
-
-lunch_tests <- rbind(free_tests,standart_tests)
+  if (is.null(lunch_tests)) {
+    lunch_tests <- aux_lunch
+  } else {
+    lunch_tests <- rbind(lunch_tests,aux_lunch) 
+  }
+}
 
 rownames(lunch_tests)<-c("Free/Reduced","Standard")
 colnames(lunch_tests)<-c("Matematicas", "Lectura","Redaccion")
 
+lunch_tests <- as.data.frame(lunch_tests)
 
 knitr::kable(lunch_tests)
 ```
@@ -503,13 +553,14 @@ knitr::kable(lunch_tests)
 Como se puede comprobar al ver los datos, la mayoría de las personas que han aprobado en cada uno de los tests ha tenido un almuerzo normal antes del examen, dando a entender de que se trata de la opción preferible sobre tener un almuerzo reducido.
 
 ```{r}
-par(mar = c(5,4,4,10))
+par(mar = c(5,4,4,7))
 
-barplot(cbind(as.numeric(lunch_tests[1,]),as.numeric(lunch_tests[2,])) ~ c("Matematicas","Lectura","Redaccion"),
+barplot(cbind(as.numeric(lunch_tests[1,]),as.numeric(lunch_tests[2,])) ~ 
+          c("Matematicas","Lectura","Redaccion"),
         beside = TRUE,
         xlab = "Asignaturas",
         ylab = "Numero de estudiantes",
-        ylim = c(0, 1000),
+        ylim = c(0, 700),
         col = rainbow(dim(lunch_tests)[1]),
         legend.text = c("Free/Reduced","Standard"),
         args.legend = list(x = "right", bty="n", inset=c(-0.30,0), xpd = TRUE),
@@ -519,26 +570,27 @@ barplot(cbind(as.numeric(lunch_tests[1,]),as.numeric(lunch_tests[2,])) ~ c("Mate
 ### 2.3.5. Resultados según la preparación para los tests
 
 ```{r}
-completed_tests <- data[data$Preparation==dataLevels$Preparation[1],] %>%
+preparation_tests <- NULL
+
+for (k in 1:length(dataLevels$Preparation)) {
+  aux_preparation <- data[data$Preparation==dataLevels$Preparation[k],] %>%
   summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
+    count_math = sum(Math>=pass),
+    count_reading = sum(Reading>=pass),
+    count_writing = sum(Writing>=pass),
     .groups = "drop"
   ) 
-
-none_tests <- data[data$Preparation==dataLevels$Preparation[2],] %>%
-  summarise(
-    count_math = sum(Math>=aprobado),
-    count_reading = sum(Reading>=aprobado),
-    count_writing = sum(Writing>=aprobado),
-    .groups = "drop"
-  ) 
-
-preparation_tests <- rbind(completed_tests,none_tests)
+  if (is.null(preparation_tests)) {
+    preparation_tests <- aux_preparation
+  } else {
+    preparation_tests <- rbind(preparation_tests,aux_preparation) 
+  }
+}
 
 rownames(preparation_tests)<-c("Completed","None")
 colnames(preparation_tests)<-c("Matematicas", "Lectura","Redaccion")
+
+preparation_tests <- as.data.frame(preparation_tests)
 
 knitr::kable(preparation_tests)
 ```
@@ -548,11 +600,12 @@ Como se puede observar, la mayor parte de los estudiantes que han superado los t
 ```{r}
 par(mar = c(5,4,4,10))
 
-barplot(cbind(as.numeric(preparation_tests[1,]),as.numeric(preparation_tests[2,])) ~ c("Matematicas","Lectura","Redaccion"),
+barplot(cbind(as.numeric(preparation_tests[1,]),as.numeric(preparation_tests[2,])) ~ 
+          c("Matematicas","Lectura","Redaccion"),
         beside = TRUE,
         xlab = "Asignaturas",
         ylab = "Numero de estudiantes",
-        ylim = c(0, 1000),
+        ylim = c(0, 600),
         col = rainbow(dim(preparation_tests)[1]),
         legend.text = c("Completed","None"),
         args.legend = list(x = "right", bty="n", inset=c(-0.30,0), xpd = TRUE),
@@ -568,27 +621,27 @@ Vamos a comenzar a visualizar la relación entre la puntuación media por test y
 En primer lugar, vamos a comprobar si existe alguna diferencia significativa entres los hombres y las mujeres en los resultados de los tests.
 
 ```{r}
-female_avg_scores <- data[data$Gender==dataLevels$Gender[1],] %>%
+gender_avg_score <- NULL
+
+for (k in 1:length(dataLevels$Gender)) {
+  aux_gender <- data[data$Gender==dataLevels$Gender[k],] %>%
   summarise(
     avg_score_math = round(mean(Math),1),
     avg_score_reading = round(mean(Reading),1),
     avg_score_writing = round(mean(Writing),1),
     .groups = "drop"
   )
-
-male_avg_scores <- data[data$Gender==dataLevels$Gender[2],] %>%
-  summarise(
-    avg_score_math = round(mean(Math),1),
-    avg_score_reading = round(mean(Reading),1),
-    avg_score_writing = round(mean(Writing),1),
-    .groups = "drop"
-  )
-
-
-gender_avg_score <- rbind(female_avg_scores,male_avg_scores)
+  if (is.null(gender_avg_score)) {
+    gender_avg_score <- aux_gender
+  } else {
+    gender_avg_score <- rbind(gender_avg_score,aux_gender) 
+  }
+}
 
 rownames(gender_avg_score)<-c("Mujer","Hombre")
 colnames(gender_avg_score)<-c("Matematicas Media", "Lectura Media","Redaccion Media")
+
+gender_avg_score <- as.data.frame(gender_avg_score)
 
 knitr::kable(gender_avg_score)
 ```
@@ -596,9 +649,10 @@ knitr::kable(gender_avg_score)
 Los resultados obtenidos son semejantes al del número de aprobados por género, la media de las mujeres en lectura y redacción es superior, pero en matemáticas los hombres tienen una media superior.
 
 ```{r}
-par(mar = c(5,4,4,10))
+par(mar = c(5,4,4,8))
 
-barplot(cbind(as.numeric(gender_avg_score[1,]),as.numeric(gender_avg_score[2,])) ~ c("Matematicas","Lectura","Redaccion"),
+barplot(cbind(as.numeric(gender_avg_score[1,]),as.numeric(gender_avg_score[2,])) ~ 
+          c("Matematicas","Lectura","Redaccion"),
         beside = TRUE,
         xlab = "Asignaturas",
         ylab = "Resultado",
@@ -614,50 +668,27 @@ barplot(cbind(as.numeric(gender_avg_score[1,]),as.numeric(gender_avg_score[2,]))
 En segundo lugar, vamos a comprobar si existe alguna relación entre los miembros de una etnia y sus resultados de los tests.
 
 ```{r}
-ethnicity_avg_a <- data[data$Ethnicity==dataLevels$Ethnicity[1],] %>%
+ethnicity_avg_score <- NULL
+
+for (k in 1:length(dataLevels$Ethnicity)) {
+  aux_ethnicity <- data[data$Ethnicity==dataLevels$Ethnicity[k],] %>%
   summarise(
     avg_score_math = round(mean(Math),1),
     avg_score_reading = round(mean(Reading),1),
     avg_score_writing = round(mean(Writing),1),
     .groups = "drop"
   )
-
-ethnicity_avg_b <- data[data$Ethnicity==dataLevels$Ethnicity[2],] %>%
-  summarise(
-    avg_score_math = round(mean(Math),1),
-    avg_score_reading = round(mean(Reading),1),
-    avg_score_writing = round(mean(Writing),1),
-    .groups = "drop"
-  )
-
-ethnicity_avg_c <- data[data$Ethnicity==dataLevels$Ethnicity[3],] %>%
-  summarise(
-    avg_score_math = round(mean(Math),1),
-    avg_score_reading = round(mean(Reading),1),
-    avg_score_writing = round(mean(Writing),1),
-    .groups = "drop"
-  )
-
-ethnicity_avg_d <- d_scores <- data[data$Ethnicity==dataLevels$Ethnicity[4],] %>%
-  summarise(
-    avg_score_math = round(mean(Math),1),
-    avg_score_reading = round(mean(Reading),1),
-    avg_score_writing = round(mean(Writing),1),
-    .groups = "drop"
-  )
-
-ethnicity_avg_e <- data[data$Ethnicity==dataLevels$Ethnicity[5],] %>%
-  summarise(
-    avg_score_math = round(mean(Math),1),
-    avg_score_reading = round(mean(Reading),1),
-    avg_score_writing = round(mean(Writing),1),
-    .groups = "drop"
-  )
-
-ethnicity_avg_score <- rbind(ethnicity_avg_a,ethnicity_avg_b,ethnicity_avg_c,ethnicity_avg_d,ethnicity_avg_e)
+  if (is.null(ethnicity_avg_score)) {
+    ethnicity_avg_score <- aux_ethnicity
+  } else {
+    ethnicity_avg_score <- rbind(ethnicity_avg_score,aux_ethnicity) 
+  }
+}
 
 rownames(ethnicity_avg_score)<-c("Group A","Group B","Group C","Group D","Group E")
 colnames(ethnicity_avg_score)<-c("Matematicas Media", "Lectura Media","Redaccion Media")
+
+ethnicity_avg_score <- as.data.frame(ethnicity_avg_score)
 
 knitr::kable(ethnicity_avg_score)
 ```
@@ -667,7 +698,10 @@ Como se puede observar, el grupo que ha obtenido la mejor media en todas los tes
 ```{r}
 par(mar = c(5,4,4,10))
 
-barplot(cbind(as.numeric(ethnicity_avg_score[1,]),as.numeric(ethnicity_avg_score[2,]),as.numeric(ethnicity_avg_score[3,]),as.numeric(ethnicity_avg_score[4,]),as.numeric(ethnicity_avg_score[5,])) ~ c("Matematicas","Lectura","Redaccion"),
+barplot(cbind(as.numeric(ethnicity_avg_score[1,]),as.numeric(ethnicity_avg_score[2,]),
+              as.numeric(ethnicity_avg_score[3,]),as.numeric(ethnicity_avg_score[4,]),
+              as.numeric(ethnicity_avg_score[5,])) ~ 
+          c("Matematicas","Lectura","Redaccion"),
         beside = TRUE,
         xlab = "Asignaturas",
         ylab = "Resultado",
@@ -681,58 +715,28 @@ barplot(cbind(as.numeric(ethnicity_avg_score[1,]),as.numeric(ethnicity_avg_score
 ### 2.4.3. Resultados según los estudios de los padres
 
 ```{r}
-parent_avg_associate <- data[data$Parent_Education==dataLevels$Parent_Education[1],] %>%
+parent_avg_score <- NULL
+
+for (k in 1:length(dataLevels$Parent_Education)) {
+  aux_parent <- data[data$Parent_Education==dataLevels$Parent_Education[k],] %>%
   summarise(
     avg_score_math = round(mean(Math),1),
     avg_score_reading = round(mean(Reading),1),
     avg_score_writing = round(mean(Writing),1),
     .groups = "drop"
   )
+  if (is.null(parent_avg_score)) {
+    parent_avg_score <- aux_parent
+  } else {
+    parent_avg_score <- rbind(parent_avg_score,aux_parent) 
+  }
+}
 
-parent_avg_bachelor <- data[data$Parent_Education==dataLevels$Parent_Education[2],] %>%
-  summarise(
-    avg_score_math = round(mean(Math),1),
-    avg_score_reading = round(mean(Reading),1),
-    avg_score_writing = round(mean(Writing),1),
-    .groups = "drop"
-  )
-
-parent_avg_high <- data[data$Parent_Education==dataLevels$Parent_Education[3], ] %>%
-  summarise(
-    avg_score_math = round(mean(Math),1),
-    avg_score_reading = round(mean(Reading),1),
-    avg_score_writing = round(mean(Writing),1),
-    .groups = "drop"
-  )
-
-parent_avg_master <- data[data$Parent_Education==dataLevels$Parent_Education[4], ] %>%
-  summarise(
-    avg_score_math = round(mean(Math),1),
-    avg_score_reading = round(mean(Reading),1),
-    avg_score_writing = round(mean(Writing),1),
-    .groups = "drop"
-  )
-
-parent_avg_college <- data[data$Parent_Education==dataLevels$Parent_Education[5],] %>%
-  summarise(
-    avg_score_math = round(mean(Math),1),
-    avg_score_reading = round(mean(Reading),1),
-    avg_score_writing = round(mean(Writing),1),
-    .groups = "drop"
-  )
-
-parent_avg_shigh <- data[data$Parent_Education==dataLevels$Parent_Education[6],] %>%
-  summarise(
-    avg_score_math = round(mean(Math),1),
-    avg_score_reading = round(mean(Reading),1),
-    avg_score_writing = round(mean(Writing),1),
-    .groups = "drop"
-  )
-
-parent_avg_score <- rbind(parent_avg_associate,parent_avg_bachelor,parent_avg_high,parent_avg_master,parent_avg_college,parent_avg_shigh)
-
-rownames(parent_avg_score)<-c("Associate's degree","Bachelor's degree","High school","Master's degree","Some college","Some high school")
+rownames(parent_avg_score)<-c("Associate's degree","Bachelor's degree","High school",
+                              "Master's degree","Some college","Some high school")
 colnames(parent_avg_score)<-c("Matematicas Media", "Lectura Media","Redaccion Media")
+
+parent_avg_score <- as.data.frame(parent_avg_score)
 
 knitr::kable(parent_avg_score)
 ```
@@ -740,15 +744,19 @@ knitr::kable(parent_avg_score)
 Como se puede observar, los valores obtenidos son proporcionales a la cantidad de personas total que forma cada grupo. De la misma manera, hay una cantidad similar de perrsonas que han aprobado en cada uno de los tests por cada uno de los niveles de educación.
 
 ```{r}
-par(mar = c(5,4,4,10))
+par(mar = c(5,4,4,8))
 
-barplot(cbind(as.numeric(parent_avg_score[1,]),as.numeric(parent_avg_score[2,]),as.numeric(parent_avg_score[3,]),as.numeric(parent_avg_score[4,]),as.numeric(parent_avg_score[5,]),as.numeric(parent_avg_score[6,])) ~ c("Matematicas","Lectura","Redaccion"),
+barplot(cbind(as.numeric(parent_avg_score[1,]),as.numeric(parent_avg_score[2,]),
+              as.numeric(parent_avg_score[3,]),as.numeric(parent_avg_score[4,]),
+              as.numeric(parent_avg_score[5,]),as.numeric(parent_avg_score[6,])) ~ 
+          c("Matematicas","Lectura","Redaccion"),
         beside = TRUE,
         xlab = "Asignaturas",
         ylab = "Resultado",
         ylim = c(0, 100),
         col = rainbow(dim(parent_avg_score)[1]),
-        legend.text = c("Associate's degree","Bachelor's degree","High school","Master's degree","Some college","Some high school"),
+        legend.text = c("Associate's degree","Bachelor's degree","High school",
+                        "Master's degree","Some college","Some high school"),
         args.legend = list(x = "right", bty="n", inset=c(-0.40,0), xpd = TRUE),
         main = "Medias según la educación de los padres")
 ```
@@ -756,26 +764,27 @@ barplot(cbind(as.numeric(parent_avg_score[1,]),as.numeric(parent_avg_score[2,]),
 ### 2.4.4. Resultados según el almuerzo previo a los tests
 
 ```{r}
-lunch_avg_free <- data[data$Lunch==dataLevels$Lunch[1], ] %>%
+lunch_avg_score <- NULL
+
+for (k in 1:length(dataLevels$Lunch)) {
+  aux_lunch <- data[data$Lunch==dataLevels$Lunch[k],] %>%
   summarise(
     avg_score_math = round(mean(Math),1),
     avg_score_reading = round(mean(Reading),1),
     avg_score_writing = round(mean(Writing),1),
     .groups = "drop"
   )
-
-lunch_avg_standart <- data[data$Lunch==dataLevels$Lunch[2],] %>%
-  summarise(
-    avg_score_math = round(mean(Math),1),
-    avg_score_reading = round(mean(Reading),1),
-    avg_score_writing = round(mean(Writing),1),
-    .groups = "drop"
-  )
-
-lunch_avg_score <- rbind(lunch_avg_free,lunch_avg_standart)
+  if (is.null(lunch_avg_score)) {
+    lunch_avg_score <- aux_lunch
+  } else {
+    lunch_avg_score <- rbind(lunch_avg_score,aux_lunch) 
+  }
+}
 
 rownames(lunch_avg_score)<-c("Free/Reduced","Standard")
 colnames(lunch_avg_score)<-c("Matematicas Media", "Lectura Media","Redaccion Media")
+
+lunch_avg_score <- as.data.frame(lunch_avg_score)
 
 knitr::kable(lunch_avg_score)
 ```
@@ -783,9 +792,10 @@ knitr::kable(lunch_avg_score)
 Como se puede comprobar al ver los datos, la media de los resultados de los estudiantes que han realizado un almuerzo estándar es superior, además de ser similar en los tres tests.
 
 ```{r}
-par(mar = c(5,4,4,10))
+par(mar = c(5,4,4,7))
 
-barplot(cbind(as.numeric(lunch_avg_score[1,]),as.numeric(lunch_avg_score[2,])) ~ c("Matematicas","Lectura","Redaccion"),
+barplot(cbind(as.numeric(lunch_avg_score[1,]),as.numeric(lunch_avg_score[2,])) ~ 
+          c("Matematicas","Lectura","Redaccion"),
         beside = TRUE,
         xlab = "Asignaturas",
         ylab = "Resultado",
@@ -799,39 +809,40 @@ barplot(cbind(as.numeric(lunch_avg_score[1,]),as.numeric(lunch_avg_score[2,])) ~
 ### 2.4.5. Resultados según la preparación para los tests
 
 ```{r}
-completed_scores <- data[data$Preparation==dataLevels$Preparation[1], c(1,6:8)]
+preparation_avg_score <- NULL
 
-none_scores <- data[data$Preparation==dataLevels$Preparation[2], c(1,6:8)]
-
-preparation_avg_completed <- completed_scores %>%
+for (k in 1:length(dataLevels$Preparation)) {
+  aux_preparation <- data[data$Preparation==dataLevels$Preparation[k],] %>%
   summarise(
-    avg_score_math = round(mean(completed_scores$Math),1),
-    avg_score_reading = round(mean(completed_scores$Reading),1),
-    avg_score_writing = round(mean(completed_scores$Writing),1),
+    avg_score_math = round(mean(Math),1),
+    avg_score_reading = round(mean(Reading),1),
+    avg_score_writing = round(mean(Writing),1),
     .groups = "drop"
   )
-
-preparation_avg_none <- none_scores %>%
-  summarise(
-    avg_score_math = round(mean(none_scores$Math),1),
-    avg_score_reading = round(mean(none_scores$Reading),1),
-    avg_score_writing = round(mean(none_scores$Writing),1),
-    .groups = "drop"
-  )
-
-preparation_avg_score <- rbind(preparation_avg_completed,preparation_avg_none)
+  if (is.null(preparation_avg_score)) {
+    preparation_avg_score <- aux_preparation
+  } else {
+    preparation_avg_score <- rbind(preparation_avg_score,aux_preparation) 
+  }
+}
 
 rownames(preparation_avg_score)<-c("Completed","None")
-colnames(preparation_avg_score)<-c("Matematicas Media", "Lectura Media","Redaccion Media")
+colnames(preparation_avg_score)<-c("Matematicas Media", "Lectura Media",
+                                   "Redaccion Media")
+
+preparation_avg_score <- as.data.frame(preparation_avg_score)
 
 knitr::kable(preparation_avg_score)
 ```
+
 Como se puede observar, los estudiantes con preparación previa han obtenido de media mejores resultados en todos los tests, aunque hay una mayor diferencia con matemáticas respecto al resto.
 
 ```{r}
 par(mar = c(5,4,4,10))
 
-barplot(cbind(as.numeric(preparation_avg_score[1,]),as.numeric(preparation_avg_score[2,])) ~ c("Matematicas","Lectura","Redaccion"),
+barplot(cbind(as.numeric(preparation_avg_score[1,]),
+              as.numeric(preparation_avg_score[2,])) ~ 
+          c("Matematicas","Lectura","Redaccion"),
         beside = TRUE,
         xlab = "Asignaturas",
         ylab = "Resultados",
@@ -847,10 +858,6 @@ barplot(cbind(as.numeric(preparation_avg_score[1,]),as.numeric(preparation_avg_s
 ### 3.1. Valores ausentes
 
 Vamos comenzar la limpieza buscando los valores ausentes, y para ello vamos a utilizar el paquete "mice".
-
-```{r}
-library(mice)
-```
 
 La función en específico que vamos a utilizar es "md.pattern", que revisa las columnas de nuestro data frame y nos indica cuáles tienen valores perdidos.
 
@@ -1038,7 +1045,8 @@ find_outliers = function(column){
 Comprobamos si existen valores outliers en las puntuaciones de los tests mediante un gráfico de caja y bigotes que genera la función "boxplot":
 
 ```{r}
-boxplot(data[,6:8], main = "Puntuaciones en tests", ylab = "Puntuación", col = c("yellow","blue","red"))
+boxplot(data[,6:8], main = "Puntuaciones en tests", ylab = "Puntuación", col = 
+          c("yellow","blue","red"))
 ```
 
 Como se puede observar, en los tres tests se encuentran valores outliers, por lo que vamos tratar cada caso individualmente.
@@ -1067,7 +1075,6 @@ El valor outlier máximo en las puntuaciones del test de matemáticas es: `r res
 Vamos a continuar buscando los outliers en los tests de lectura:
 
 ```{r}
-boxplot(data$Reading, main = "Puntuaciones en test de lectura", ylab = "Puntuación", col = "blue")
 statsReading <- boxplot.stats(data$Reading)
 statsReading
 ```
@@ -1087,7 +1094,6 @@ El valor outlier máximo en las puntuaciones del test de lectura es: `r resReadi
 Vamos a finalizar la búsqueda de los outliers en los tests de redacción:
 
 ```{r}
-boxplot(data$Writing, main = "Puntuaciones en test de redación", ylab = "Puntuación", col = "red")
 statsWriting <- boxplot.stats(data$Writing)
 statsWriting
 ```
@@ -1100,7 +1106,7 @@ n.Writing = nrow(resWritingOut)
 knitr::kable(resWritingOut)
 ```
 
-El valor outlier máximo en las puntuaciones del test de redacción es: `r resReadingOut$maxOut[n.Writing]`.
+El valor outlier máximo en las puntuaciones del test de redacción es: `r resWritingOut$maxOut[n.Writing]`.
 
 ### 3.3.4. Eliminación de valores outliers
 
@@ -1108,26 +1114,28 @@ Por último, vamos a quedarnos con el resto de los valores:
 
 ```{r}
 data_sin_mathOut <- data[data$Math > resMathOut$maxOut[n.Math],]
-data_sin_readingOut <- data_sin_mathOut[data_sin_mathOut$Reading > resReadingOut$maxOut[n.Reading],]
-final_data <- data_sin_readingOut[data_sin_readingOut$Writing > resWritingOut$maxOut[n.Writing],]
+
+data_sin_readingOut <- data_sin_mathOut[data_sin_mathOut$Reading > 
+                                          resReadingOut$maxOut[n.Reading],]
+
+final_data <- data_sin_readingOut[data_sin_readingOut$Writing > 
+                                    resWritingOut$maxOut[n.Writing],]
 ```
 
 Comprobamos que ya no haya valores outliers:
 
 ```{r}
-boxplot(final_data[,6:8], main = "Puntuaciones en tests", ylab = "Puntuación", col = c("yellow","blue","red"))
+boxplot(final_data[,6:8], main = "Puntuaciones en tests", ylab = "Puntuación", col = 
+          c("yellow","blue","red"))
 
-statsMath <- boxplot.stats(final_data$Math)
-print("Stats finales de matemáticas")
-statsMath
+# Stats finales de matemáticas
+boxplot.stats(final_data$Math)
 
-statsReading <- boxplot.stats(final_data$Reading)
-print("Stats finales de lectura")
-statsReading
+# Stats finales de lectura
+boxplot.stats(final_data$Reading)
 
-statsWriting <- boxplot.stats(final_data$Writing)
-print("Stats finales de redacción")
-statsWriting
+# Stats finales de redacción
+boxplot.stats(final_data$Writing)
 ```
 
 Finalizamos con el resumen del nuevo dataframe sin valores outliers:
@@ -1140,12 +1148,12 @@ Nuestro data frame final tendría `r dim(final_data)[1]` filas.
 Antes de terminar con este apartado, vamos a guardar de nuevo nuestro data frame en un archivo RData:
 
 ```{r}
-save(final_data, file = "students_final.RData")
+save(final_data, file = "final_data.RData")
 ```
 
 ## 4. Transformación
 
-### Discretización
+### 4.1. Discretización
 
 Vamos a comprobar cuál es el tipo de nuestro valores numéricos utilizando la función "str":
 
@@ -1153,4 +1161,4 @@ Vamos a comprobar cuál es el tipo de nuestro valores numéricos utilizando la f
 str(final_data[,6:8])
 ```
 
-Como se puede observar, los 3 tipos de puntuaciones son del tipo entero, por lo que no pueden contener decimales. Por lo tanto, se tratan de variables discretas y resultaría necesario el proceso de discretización.
+Como se puede observar, los 3 tipos de puntuaciones son del tipo entero, por lo que no pueden contener decimales. Por lo tanto, se tratan de variables discretas y no resultaría necesario el proceso de discretización.
