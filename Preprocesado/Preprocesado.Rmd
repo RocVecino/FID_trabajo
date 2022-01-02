@@ -1145,10 +1145,12 @@ summary(final_data)
 ```
 Nuestro data frame final tendría `r dim(final_data)[1]` filas.
 
-Antes de terminar con este apartado, vamos a guardar de nuevo nuestro data frame en un archivo RData:
+Antes de terminar con este apartado, vamos a guardar de nuevo nuestro data frame en un archivo RData y en un CSV:
 
 ```{r}
 save(final_data, file = "final_data.RData")
+
+write.csv(final_data,"./data/Prep_StudentsPerformance.csv", row.names = FALSE)
 ```
 
 ## 4. Transformación
