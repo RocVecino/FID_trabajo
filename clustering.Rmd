@@ -1,0 +1,115 @@
+---
+title: "Clustering"
+author: "Rocío Vecino Torres"
+date: "2/1/2022"
+output: 
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+tinytex::install_tinytex()
+```
+
+# Clustering
+
+La agrupación es una técnica para agrupar puntos de datos similares en un grupo y separar las diferentes observaciones en diferentes grupos.
+
+Antes de empezar con el análisis del clustering, cargamos las librerias necesarias y el dataset de observaciones.
+
+Cargamos las librerias necesarias:
+
+```{r}
+library(tidyverse)
+library(cluster)
+library(scales)
+library(ggthemes)
+library(purrr)
+```
+
+Cargamos los datos del fichero .csv:
+
+```{r}
+#En un primer lugar cargaremos los datos: 
+students_data <- read.csv("StudentsPerformancePreprocesado.csv", sep = ',', head = TRUE)
+students_data$id <- NULL
+colnames(students_data)
+view(students_data)
+```
+
+## Estudio 1: Clustering Jerárquico. 
+
+Los clústers pueden crearse de arriba a abajo o viceversa. Por lo tanto, son dos tipos: Divisivo y Aglomerativo. En este estudio veremos ambos tipos y se hará una comparativa entre los dos.
+
+-   El [tipo devisivo]{.ul} consiste en: suponer que todas las observaciones pertenecen a un único grupo y luego dividimos el clúster en dos grupos menos similares. Esto se repite recursivamente en cada grupo hasta que haya un grupo para cada observación.
+
+-   El [tipo aglomerativo]{.ul} consiste en: que cada observación se asigna a su propio clúster. Luego, se calcula la similitud (o distancia) entre cada uno de los clusters y los dos clusters más similares se fusionan en uno. Finalmente, los pasos 2 y 3 se repiten hasta que solo quede un grupo.
+
+### Agrupamiento jerárquico aglomerativo: 
+
+Hay dos funciones interesantes para el clustering agromerativo: la función hclust(), que es la que hemos usado en clase, y la función agnes(). En este estudio se hara uso de la función agnes().
+
+La función agnes además de que nos permite conocer el coeficiente de aglomeración, mide la cantidad de estructura de agrupamiento encontrada (los valores más cercanos a 1 sugieren una estructura de agrupación fuerte).
+
+En un primer lugar, vamos a probar agnes con un link de tipo complete.
+
+```{r}
+cluster_aglomerativo <- agnes(students_data, method = "complete")
+#mostramos el coeficiente aglomerativo
+cluster_aglomerativo$ac
+```
+
+Vemos que el coeficiente aglomerativo para un cluster de tipo complete link es de: 0,978. Muy cercana a 1.
+
+Ahora, vamos a comparar con los distintos tipos vistos en clase y nos quedamos con el que tenga mayor coeficiente aglomerativo. Esos métodos son:
+
+-   Average Link
+
+-   Single Link
+
+-   Complete Link
+
+```{r}
+#vector con los metodos a comparar 
+m <- c("average","single","complete")
+names(m) <- c("average","single","complete")
+
+#funcion para calcular el coeficiente por metodo del vector
+ac <- function(x){
+  agnes(students_data, method = x)$ac
+}
+#show
+map_dbl(m,ac)
+```
+
+Viendo los tres coeficientes vemos que efectivamente, el que mejor coeficiente de aglomeración tiene es el cluster usando el método de **Complete.**
+
+Visualizamos el dendograma:
+
+```{r}
+#dendograma
+pltree(cluster_aglomerativo, cex = 0.6, hang = -1, main = "Dendograma método complete")
+```
+
+Vamos a realizar un análisis de clustering jerárquico. Para ello:
+
+Calculamos la similitud entre las observaciones mediante la distancia euclídea, haciendo uso de la función dist().
+
+```{r}
+matriz_distancias<-dist(students_data)
+```
+
+Esta distancia de similitud es la que se le pasará a la función hclust() para marcar la distancia entre los clusters.
+
+```{r}
+hclust_aux <-hclust(matriz_distancias)
+```
+
+Analizamos el resultado haciendo uso de la función summary() y visualizando cluster.
+
+```{r}
+summary(hclust_aux)
+hclust_aux$cluster
+print(hclust_aux)
+```
