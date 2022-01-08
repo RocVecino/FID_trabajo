@@ -1,0 +1,610 @@
+---
+title: "Estudio de análisis de regresión"
+author: "Rocío Vecino Torres"
+date: "29/12/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+tinytex::install_tinytex()
+```
+
+# Estudio de análisis de regresión
+
+Vamos a trabajar con un Excel, llamado StudentsPerformance, que contendrá datos de 1.000 observaciones y con 8 variables que tendrá la información de: genero, raza, nivel de estudios de los padres, si comieron, si hicieron el exámen de preparación, y los resultados de los exámenes en Writting, Reading y Matemáticas.
+
+-   Género: tiene valor de mujer o masculino.
+
+-   Raza: tiene valores de Grupo A, B, C, D, E.
+
+-   Nivel de educación de los padres: bacherlor´s degree (licenciatura), some college cd (algún grado), master´s degree (maestría), associate´s degree (grado asociado), high school (instituo), some high school.
+
+-   Comida: completa o reducida.
+
+-   Test de preparación del exámen: completa o ninguna.
+
+-   Resultados en los examenes de Writting, Reding y Matemáticas: Valores numéricos del 1 al 100.
+
+Para comenzar, cargamos las librerias que serán necesarias.
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+```
+
+Y cargamos los datos del fichero .csv:
+
+```{r}
+#En un primer lugar cargaremos los datos: 
+students_data <- read.csv("StudentsPerformancePreprocesado.csv", sep = ',', head = TRUE)
+students_data$id <- NULL
+colnames(students_data)
+```
+
+## Estudio 1: Regresión multivariable.
+
+Para realizar la regresión multivariable, se deben de realizar los siguientes puntos:  
+
+1.  Dibujar los resultados de los exámenes de Matemáticas, Reading y Writing en función del resto de variables para observar si hay una relación lineal. 
+
+[Resultados de los exámenes de matemáticas:]{.ul}  
+
+Se estudia la relación entre los resultados del examen de matemáticas y dos variables: el género del estudiante y la preparación para el examen.
+
+```{r}
+#relación entre los resultados del examen de matemáticas y dos variables: el género del estudiante y la preparación para el exámen
+ggplot(students_data, aes(x = gender, y = math.score)) + geom_boxplot() + facet_grid(~test.preparation.course)
+```
+
+Como resultado, se puede ver que:
+
+-   Los hombres tienen un puntuaje un poco mayor que las mujeres de media. Los hombres tienen menos valores atípicos, sus datos difieren menos entre ellos. 
+
+-   El curso de preparación ayudo a los estudiantes a lograr mejores resultados. Obteniendo un promedio más alto y valores menos atípicos. 
+
+Se estudia la relación entre los resultados del examen de matemáticas y lo que han comido los estudiantes.
+
+```{r}
+#relación entre los resultados del examen de matemáticas y la comida del estudiante
+ggplot(students_data, aes(x = lunch, y = math.score))+ geom_boxplot()
+```
+
+Como resultado de la gráfica, se observa que:
+
+-   Los estudiantes que comieron una comida standard obtuvieron mayor nota que los que comieron una comida reducida. Aunque, ambas tienen valores atípicos. 
+
+Se estudia la relación entre los resultados del examen de matemáticas y el nivel academico de los padres de los estudiantes.
+
+```{r}
+#relación entre los resultados del examen de matemáticas y el nivel de estudios de los padres
+ggplot(students_data, aes(x = parental.level.of.education, y = math.score))+ geom_boxplot()
+```
+
+Como resultado, se puede ver lo siguiente:
+
+-   Los estudiantes cuyos padres tienen un nivel de educación de maestría (Master´s degree) tiene un promedio un poco más alto con respecto a los demás. El promedio de los que tiene un nivel de estudios de licenciado o de grado (associate´s degree, bachelor´s degree, some college) están muy igualados entre sí. Tienen más bajo promedio aquellos cuyo nivel educativo de los padres es de instituto (high school). Se puede ver también que los datos del nivel educativo de los padres de Master y grado asociado (associate´s degree) no tienen valores atípicos.  
+
+[Resultados de los exámenes de Lectura (Reading):]{.ul}
+
+Se estudia la relación entre los resultados del examen de lectura y dos variables: el género del estudiante y la preparación para el [exámen]{.ul}.
+
+```{r}
+#relación entre los resultados del examen de lectura y dos variables: el género del estudiante y la preparación para el exámen
+ggplot(students_data, aes(x = gender, y = reading.score)) + geom_boxplot() + facet_grid(~test.preparation.course)
+```
+
+Como resultado, se observa lo siguiente:
+
+-   Las mujeres tienen un puntuaje de lectura más alto en promedio, pero tiene más valores atípicos.
+
+-   Una vez más el curso de preparación hace que los estudiantes obtengas mejores resultados. 
+
+Se estudia la relación entre los resultados del examen de lectura y lo que han comido los estudiantes.
+
+```{r}
+#relación entre los resultados del examen de lectura y la comida del estudiante
+ggplot(students_data, aes(x = lunch, y = reading.score))+ geom_boxplot()
+```
+
+Como resultado, se observa lo siguiente:
+
+-   Nuevamente, los estudiantes que comieron una comida standard obtuvieron mejores resultados en el exámen.
+
+Se estudia la relación entre los resultados del examen de lectura y el nivel academico de los padres de los estudiantes.
+
+```{r}
+#relación entre los resultados del examen de lectura y el nivel de estudios de los padres
+ggplot(students_data, aes(x = parental.level.of.education, y = reading.score))+ geom_boxplot()
+
+```
+
+Como resultado, se puede ver lo siguiente:
+
+-   Se observa aproximádamente lo mismo que en los resultados de matemáticas, con la diferencia de que hay menos valores atípicos.
+
+[Resultados de los exámenes de Escritura (Writing):]{.ul}
+
+Se estudia la relación entre los resultados del examen de escritura y dos variables: el género del estudiante y la preparación para el exámen.
+
+```{r}
+#relación entre los resultados del examen de escritura y dos variables: el género del estudiante y la preparación para el exámen
+ggplot(students_data, aes(x = gender, y = writing.score)) + geom_boxplot() + facet_grid(~test.preparation.course)
+```
+
+Como resultado, se observa que:
+
+-   Las mujeres tienen un puntuaje de escritura más alto en promedio, pero tiene más valores atípicos.  
+
+-   Una vez más el curso de preparación hace que los estudiantes obtengas mejores resultados. 
+
+Se estudia la relación entre los resultados del examen de escritura y lo que han comido los estudiantes.
+
+```{r}
+#relación entre los resultados del examen de escritura y la comida del estudiante
+ggplot(students_data, aes(x = lunch, y = writing.score))+ geom_boxplot()
+```
+
+Como resultado, se puede ver que:
+
+-   Nuevamente, los estudiantes que comieron una comida standard obtuvieron mejores resultados en el exámen.
+
+Se estudia la relación entre los resultados del examen de escritura y lo que han comido los estudiantes.
+
+```{r}
+#relación entre los resultados del examen de escritura y el nivel de estudios de los padres
+ggplot(students_data, aes(x = parental.level.of.education, y = writing.score))+ geom_boxplot()
+
+```
+
+Como resultado se puede ver que:
+
+-   Se observa aproximadamente lo mismo que en los resultados de matemáticas y reading, con la diferencia de que hay menos valores atípicos. Pero en general en los tres, se ve que a mayor nivel educativo de los padres mayor puntuaje en las notas de los tres exámenes.
+
+Ahora, realizamos una comparación de los resultados de los examenes (Escritura, Lectura y Matemáticas) en función del género y la raza/etnia. 
+
+[Exámenes de Matemáticas:]{.ul} Los estudiantes del grupo E son los que obtienen mejores resultados. El grupo A es el que tiene peor resultado en el examen. Se sigue viendo que los hombres tienen mejores resultados en el examen de matemáticas. 
+
+```{r}
+ggplot(students_data, aes(x = gender, y = math.score)) + geom_boxplot() + facet_grid(~race.ethnicity)
+```
+
+[Exámenes de Lectura (Reading):]{.ul} Nuevamente, se ve que el grupo E obtiene mejores resultados. Pero no hay tanta diferencia entre las notas de los alumnos como ocurrió con los exámenes de matemáticas. Lo que sí se puede ver significativamente que las mujeres (como se vio anteriormente) que las mujeres obtienen mejores resultados en los exámenes de Lectura.  
+
+```{r}
+ggplot(students_data, aes(x = gender, y = reading.score)) + geom_boxplot() + facet_grid(~race.ethnicity)
+```
+
+Exámenes de Escritura (Writing): Se observa lo mismo que ha ocurrido en la anterior gráfica. Los estudiantes del grupo E son los que obtienen mejores resultados en escritura.   
+
+```{r}
+ggplot(students_data, aes(x = gender, y = writing.score)) + geom_boxplot() + facet_grid(~race.ethnicity)
+```
+
+Por último, se hace una comparación entre los resultados de los exámenes:  
+
+[Resultados de Matemáticas Vs. Resultados de Lectura (Reading):]{.ul} Se observa que si los estudiantes obtuvieron una nota alta en matemáticas hay mucha posibilidad de que también lo hagan en lectura. 
+
+```{r}
+ggplot(students_data, aes(x = math.score, y = reading.score)) + geom_point()
+```
+
+[Resultados de Escritura (Writing) Vs. Resultados de Lectura (Reading):]{.ul} Este gráfico muestra que existe una correlación más alta que en el gráfico anterior.  
+
+```{r}
+ggplot(students_data, aes(x = writing.score, y = reading.score)) + geom_point()
+```
+
+[Resultados de Matemáticas Vs. Resultados de Escritura (Writing):]{.ul} Se observa que a mayor nota de Matemáticas mayor nota de Escritura (Writing). Pero tiene menos correlación que en el anterior.  
+
+```{r}
+ggplot(students_data, aes(x = writing.score, y = math.score)) + geom_point()
+```
+
+2.  Construimos el modelo lineal para predecir el resultado de los examenes en funcion del resto de variables.
+
+    Creamos los datasets de entrenamiento y de pruebas (test). De tal forma que usamos 800 observaciones de entrenamiento y 200 para las pruebas de test.
+
+```{r}
+  set.seed(1)
+  sample = sample(nrow(students_data), floor(nrow(students_data) * 0.8))
+  datos_entrenamiento = students_data[sample,]
+  datos_test = students_data[-sample,]
+  
+  dim(datos_entrenamiento)
+  dim(datos_test)
+```
+
+Lo siguiente es construir el modelo predictivo para cada uno de los exámenes (Matemáticas, Lectura y Escritura). 
+
+[Modelo para Matemáticas:]{.ul}
+
+```{r}
+modelo_matematicas = lm(math.score~.,data = datos_entrenamiento)
+summary(modelo_matematicas)
+```
+
+Se observan las siguientes observaciones:  
+
+-   R cuadrado es del 0,878. Esto quiere decir que el 87,8% de los resultados de los exámenes de matemáticas está sujeto al comportamiento de las variables. Todas las variables son importantes en el modelo.  
+
+-   El coeficiente de estimación para el género Masculino es de 13,58. Esto quiere decir que la nota promedia del sexo masculino es mayor que la nota promedia del sexo femenino. 
+
+-   El coeficiente de estimación para la raza/etnia del grupo E es del 4,96. Esto quiere decir que el promedio de nota para la etnia del Grupo E es mayor que para el grupo A. 
+
+-   El coeficiente de estimación para la comida de tipo standard es de 2,94. Esto quiere decir que el promedio de nota para los estudiantes que comieron comida de tipo standard es mayor que para los que comieron reducida. 
+
+-   El coeficiente de estimación para la variable de test de preparación es de 3,52. Esto quiere decir que los estudiantes que no realizaron un test de preparación para el examen tienen mayor nota promedia que los que si lo realizaron.  
+
+[Modelo para Lectura(Reading):]{.ul}
+
+```{r}
+modelo_lectura = lm(reading.score~.,data = datos_entrenamiento)
+summary(modelo_lectura)
+```
+
+Se observa lo siguiente:
+
+-   R cuadrado es de 0,9284. Esto quiere decir que el 92,8% de los resultados de los exámenes de Lectura (Reading) esta sujeto al comportamiento de las variables.
+
+-   También, destacan los coeficientes de estimación de: Test de preparación para el exámen y el nivel academico de los padres.
+
+[Modelo para Escritura (Writing):]{.ul}
+
+```{r}
+modelo_escritura = lm(writing.score~.,data = datos_entrenamiento)
+summary(modelo_escritura)
+```
+
+Se puede observar que:
+
+-   R cuadrado es de 0,9494. Es decir, que le 94,94% de los resultados de los exámenes de Escritura (Writing) está sujeto al comportamiento de las variables.
+
+-   Destacan los coeficientes de estimación de: raza o etnia, nivel academico de los padres (master y bachelor degree) y test de preparación del examen.
+
+    3.  Predicción del modelo y rendimiento.
+
+Una vez construidos los 3 modelos, es tiempo de usar la funcion predict() para predecir dado un modelo los resultados con el dataset de pruebas que hicimos anteriormente. Y calcular el rendimiento del modelo, calculando el RMSE (Root Mean Square Error - Raíz del error cuadratico medio)
+
+[Predicción modelo del examen de Matemáticas:]{.ul}
+
+```{r}
+pred_mates = predict(modelo_matematicas, newdata = datos_test)
+sqrt(mean((datos_test$math.score - pred_mates)^2))
+```
+
+[Predicción modelo del examen de Lectura(Reading):]{.ul}
+
+```{r}
+pred_reading = predict(modelo_lectura, newdata = datos_test)
+sqrt(mean((datos_test$reading.score - pred_reading)^2))
+```
+
+[Predicción modelo del examen de Escritura (Writing):]{.ul}
+
+```{r}
+pred_writing = predict(modelo_escritura, newdata = datos_test)
+sqrt(mean((datos_test$writing.score - pred_writing)^2))
+```
+
+El error de predicción del modelo es relativamente pequeño.
+
+## Estudio 2: Arbol de regresión.
+
+En este estudio se tratara de predecir las notas de matemáticas, lectura (Reading) y escritura (Writing) en función del resto de variables: género, raza, nivel académico de los padres, Comida (lo que comieron: reducida o standard), si hicieron el test de preparación para el examen.
+
+Para ello, primero cargamos las libreria necesaria que es rpart:
+
+```{r}
+library(rpart)
+```
+
+[Árbol de Regressión para predecir la nota de Matemáticas:]{.ul}
+
+Haciendo uso de la función rpart() de R, construimos el árbol.
+
+```{r}
+tree_mates <- rpart(math.score~gender+race.ethnicity+parental.level.of.education+lunch+test.preparation.course, method = "anova", data = datos_entrenamiento)#metodo anova especifica que el arbol es de regresion
+```
+
+Visualizamos el árbol:
+
+```{r}
+plot(tree_mates, uniform=TRUE,
+   main="Árbol de regresión calificaciones de Matemáticas")
+text(tree_mates, use.n=TRUE, all=TRUE, cex=.8)
+```
+
+Mostramos los resultados del árbol contruido:
+
+```{r}
+printcp(tree_mates)
+```
+
+Podemos comprobar tanto por el árbol dibujado anteriormente como por resultados ahora obtenidos que las variables que utiliza para decidir son las siguientes: comida, test de preparación del curso, nivel educativo de los padres y raza.
+
+Visualizamos los resultados de la validación cruzada:
+
+```{r}
+plotcp(tree_mates)
+```
+
+Predecimos y vemos el error del Árbol de regresión:
+
+```{r}
+pred_tree_mates = predict(tree_mates, newdata = datos_test)
+sqrt(mean((datos_test$math.score - pred_tree_mates)^2))
+```
+
+El error es de 13,4669. Por lo que el error es relativamente alto.
+
+[Árbol de Regressión para predecir la nota de Lectura (Reading):]{.ul}
+
+Haciendo uso de la función rpart() de R, construimos el árbol.
+
+```{r}
+tree_lectura <- rpart(reading.score~gender+race.ethnicity+parental.level.of.education+lunch+test.preparation.course, method = "anova", data = datos_entrenamiento)#metodo anova especifica que el arbol es de regresion
+```
+
+Visualizamos el árbol:
+
+```{r}
+plot(tree_lectura, uniform=TRUE,
+   main="Árbol de regresión calificaciones de Lectura(Reading)")
+text(tree_lectura, use.n=TRUE, all=TRUE, cex=.8)
+```
+
+Mostramos los resultados del árbol contruido:
+
+```{r}
+printcp(tree_lectura)
+```
+
+Podemos comprobar tanto por el árbol dibujado anteriormente como por resultados ahora obtenidos que las variables que utiliza para decidir son las siguientes: comida, genero, si hizo el test de preparación para el curso y raza.
+
+Visualizamos los resultados de la validación cruzada:
+
+```{r}
+plotcp(tree_lectura)
+```
+
+Predecimos y vemos el error del Árbol de regresión:
+
+```{r}
+pred_tree_lectura = predict(tree_lectura, newdata = datos_test)
+sqrt(mean((datos_test$reading.score - pred_tree_lectura)^2))
+```
+
+El error es de 13,2552. Por lo que el error es relativamente alto.
+
+[Árbol de Regressión para predecir la nota de Escritura (Writing):]{.ul}
+
+Haciendo uso de la función rpart() de R, construimos el árbol.
+
+```{r}
+tree_escritura <- rpart(writing.score~gender+race.ethnicity+parental.level.of.education+lunch+test.preparation.course, method = "anova", data = datos_entrenamiento)#metodo anova especifica que el arbol es de regresion
+```
+
+Visualizamos el árbol:
+
+```{r}
+plot(tree_escritura, uniform=TRUE,
+   main="Árbol de regresión calificaciones de Escritura (Writing")
+text(tree_escritura, use.n=TRUE, all=TRUE, cex=.8)
+```
+
+Mostramos los resultados del árbol contruido:
+
+```{r}
+printcp(tree_escritura)
+```
+
+Podemos comprobar tanto por el árbol dibujado anteriormente como por resultados ahora obtenidos que las variables que utiliza para decidir son las siguientes: comida, genero, si hizo el test de preparación para el curso, nivel eduactivo de los padres y raza. Vemos que para este árbol se toma más variables para tomar la decisión.
+
+Visualizamos los resultados de la validación cruzada:
+
+```{r}
+plotcp(tree_escritura)
+```
+
+Predecimos y vemos el error del Árbol de regresión:
+
+```{r}
+pred_tree_escritura = predict(tree_escritura, newdata = datos_test)
+sqrt(mean((datos_test$writing.score - pred_tree_escritura)^2))
+```
+
+El error es de 12,72905. Por lo que el error es relativamente alto. Aunque menor que en los dos árboles anteriores.
+
+[Árbol de Regressión para predecir la nota de Escritura (Writing):]{.ul}
+
+Volvemos ha hacer este arbol de regresión pero metiendole otra variable: reading.score. Ya que vimos en el estudio de regresión multivariable una correlación alta entre Writing(Escritura) y Reading(Lectura).
+
+Haciendo uso de la función rpart() de R, construimos el árbol.
+
+```{r}
+tree_escritura1 <- rpart(writing.score~gender+race.ethnicity+parental.level.of.education+lunch+test.preparation.course+reading.score, method = "anova", data = datos_entrenamiento)#metodo anova especifica que el arbol es de regresion
+```
+
+Visualizamos el árbol:
+
+```{r}
+plot(tree_escritura1, uniform=TRUE,
+   main="Árbol de regresión calificaciones de Escritura (Writing")
+text(tree_escritura1, use.n=TRUE, all=TRUE, cex=.8)
+```
+
+Mostramos los resultados del árbol contruido:
+
+```{r}
+printcp(tree_escritura1)
+```
+
+Podemos comprobar tanto por el árbol dibujado anteriormente como por resultados ahora obtenidos que unicamente se usa la variable de Reading score.
+
+Visualizamos los resultados de la validación cruzada:
+
+```{r}
+plotcp(tree_escritura1)
+```
+
+Predecimos y vemos el error del Árbol de regresión:
+
+```{r}
+pred_tree_escritura1 = predict(tree_escritura1, newdata = datos_test)
+sqrt(mean((datos_test$writing.score - pred_tree_escritura1)^2))
+```
+
+El error es de 5.61108. Por lo que el error es relativamente bajo.
+
+[Conlusiones:]{.ul} En los tres árbole de regresión se toma como variables de decisión en común: genero, raza, comida y el test de preparación del curso.
+
+Vemos que si se añade como variable de decisión el resultado del lectura para el árbol de regresión de escritura, solo se usa esa variable como decisión y el error de predicción disminuye por lo que vemos nuevamente una correlación alta.
+
+## Estudio 3: Uso de Random Forest.
+
+Random Forest es un algoritmo de clasificación que consiste en el uso de muchos árboles de decisión. Utiliza bagging y usa características aleatorias para construir cada árbol de forma individual. Trata de crear un bosque de árboles no correlacionado entre ellos. Un bosque de árboles puede ser más preciso en la predicción que un árbol individual.
+
+Antes de comenzar cargamos la libreria ranger:
+
+```{r}
+library(ranger)
+```
+
+Construimos el modelo de Random forest con el conjunto de datos de entrenamiento que hemos estado usando para todos los casos:
+
+[Para Matemáticas:]{.ul}
+
+Creamos en un primer momento la semilla aleatoria para reproducir los resultados del modelo de random forest.
+
+```{r}
+semilla <- set.seed(1234)
+```
+
+Declaramos la variable de salida que queremos predecir: el resultado del examen de Matemáticas.
+
+```{r}
+salida_mates <- "math.score"
+```
+
+Declaramos las variables de entrada, que sera común para los tres modelos.
+
+```{r}
+entrada<- c("gender","race.ethnicity","parental.level.of.education","lunch","test.preparation.course")
+```
+
+Creamos la fórmula de la salida (resultado de mates) en función de las variables de entrada.
+
+```{r}
+formula_mates <- paste(salida_mates, "~", paste(entrada, collapse = " + "))
+```
+
+Construimos, entrenamos y visualizamos el modelo de random forest, con un número de arbóles del bosque de 200.
+
+```{r}
+(modelo_rf_mates <- ranger(formula_mates, datos_entrenamiento, num.trees = 200, respect.unordered.factors = "order", seed = semilla))
+```
+
+Vemos la predección del modelo de random forest y el error (RMSE).
+
+```{r}
+datos_test$pred_rf_mates <- predict(modelo_rf_mates, datos_test)$prediction
+sqrt(mean((datos_test$math.score - datos_test$pred_rf_mates)^2))
+```
+
+El error es de 13.1413. Por lo que el error es alto.
+
+Dibujamos una gráfica que representa la predicción de los datos de entrenamiento de los resultados de matemáticas y los datos actuales de los resultados.
+
+```{r}
+ggplot(datos_test, aes(pred_rf_mates, math.score)) + geom_point() + geom_abline() 
+```
+
+Vemos que efecitvamente hay mucho error en el la predición usando el modelo de random forest.
+
+[Para Lectura (Reading):]{.ul}
+
+Declaramos la variable de salida que queremos predecir: el resultado del examen de Lectura.
+
+```{r}
+salida_lectura <- "reading.score"
+```
+
+Creamos la fórmula de la salida (resultado de lecutura) en función de las variables de entrada.
+
+```{r}
+formula_lectura <- paste(salida_lectura, "~", paste(entrada, collapse = " + "))
+```
+
+Construimos, entrenamos y visualizamos el modelo de random forest, con un número de arbóles del bosque de 200.
+
+```{r}
+(modelo_rf_lectura <- ranger(formula_lectura, datos_entrenamiento, num.trees = 200, respect.unordered.factors = "order", seed = semilla))
+```
+
+Vemos la predección del modelo de random forest y el error (RMSE).
+
+```{r}
+datos_test$pred_rf_lectura <- predict(modelo_rf_lectura, datos_test)$prediction
+sqrt(mean((datos_test$reading.score - datos_test$pred_rf_lectura)^2))
+```
+
+El error es de 12.92341. Por lo que el error es alto, aunque un poco más bajo que el modelo de random forest para matemáticas.
+
+Dibujamos una gráfica que representa la predicción de los datos de entrenamiento de los resultados de lectura y los datos actuales de los resultados.
+
+```{r}
+ggplot(datos_test, aes(pred_rf_lectura, reading.score)) + geom_point() + geom_abline() 
+```
+
+Vemos que efecitvamente hay mucho error en el la predición usando el modelo de random forest.
+
+[Para Escritura(Writing):]{.ul}
+
+Declaramos la variable de salida que queremos predecir: el resultado del examen de Escritura.
+
+```{r}
+salida_escritura <- "writing.score"
+```
+
+Creamos la fórmula de la salida (resultado deescritura) en función de las variables de entrada.
+
+```{r}
+formula_escritura <- paste(salida_escritura, "~", paste(entrada, collapse = " + "))
+```
+
+Construimos, entrenamos y visualizamos el modelo de random forest, con un número de arbóles del bosque de 200.
+
+```{r}
+(modelo_rf_escritura <- ranger(formula_escritura, datos_entrenamiento, num.trees = 200, respect.unordered.factors = "order", seed = semilla))
+```
+
+Vemos la predección del modelo de random forest y el error (RMSE).
+
+```{r}
+datos_test$pred_rf_escritura <- predict(modelo_rf_escritura, datos_test)$prediction
+sqrt(mean((datos_test$writing.score - datos_test$pred_rf_escritura)^2))
+```
+
+El error es de 12.41713. Por lo que el error es alto, aunque un poco más bajo que el modelo de random forest para matemáticas.
+
+Dibujamos una gráfica que representa la predicción de los datos de entrenamiento de los resultados de lectura y los datos actuales de los resultados.
+
+```{r}
+ggplot(datos_test, aes(pred_rf_escritura, writing.score)) + geom_point() + geom_abline() 
+```
+
+Vemos que efecitvamente hay mucho error en el la predición usando el modelo de random forest.
+
+## Referencias.
+
+<https://fhernanb.github.io/libro_regresion/predict.html>
+
+<https://www.kaggle.com/yervandtadevosyan/linear-regression-students-performance>
+
+<https://www.statmethods.net/advstats/cart.html>
+
+<https://www.kaggle.com/sofiaabielmi/predicting-studentsperformance-with-random-forest#Random-Forest>
