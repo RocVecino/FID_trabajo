@@ -1,0 +1,109 @@
+---
+title: "K-means"
+author: "Angel Caballero Domimguez"
+date: "5/1/2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Estudio 2: Clustering K-means
+
+### Paquetes
+
+Vamos a preparar los paquetes que vamos a utilizar:
+
+```{r}
+# Paquete para visualización de los clusters
+#install.packages("factoextra")
+library(factoextra)
+```
+
+```{r}
+# Paquete para la silueta de los clusters
+#install.packages("cluster")
+library(cluster)
+```
+
+### Lectura de los datos
+
+```{r}
+df<-read.csv("./Prep_StudentsPerformance.csv",stringsAsFactors = TRUE, header = TRUE)
+```
+
+Extraemos las puntuaciones de los tests y las guardamos por separado.
+
+```{r}
+scores <- df[,6:8]
+```
+
+### Número de clusters óptimo
+
+Vamos a buscar cuál es el número de clústers óptimo para nuestro caso. Y para ello, primero vamos a ver la compactación del data set según la suma de cuadrados del clúster (SSE).
+
+```{r}
+fviz_nbclust(scores, kmeans, method = "wss", k.max = 15)
+```
+
+Como se puede observar, un buen número de clusters podrían ser 2. Para confirmar esto, vamos a ver los resultados de la silueta.
+
+```{r}
+fviz_nbclust(scores, kmeans, method = "silhouette", k.max = 15)
+```
+
+Debido a los resultados obtenidos en ambos gráficos, vamos a clasificar en dos clusters.
+
+### Realización de k-means
+
+Primero debemos establecer una semilla, para que el experimento pueda ser recreado.
+
+```{r}
+set.seed(6)
+```
+
+Ahora vamos a utilizar la función kmeans() del paquete stasts.
+
+```{r}
+km_res <- kmeans(scores,centers =2,nstart =20) 
+
+# Mostramos un resumen del resultado
+summary(km_res)
+
+# Mostramos todo el contenido del objeto resultante
+print(km_res)
+```
+
+A continuación, vamos a ver gráficamente los clusters resultantes por cada pareja de test.
+
+```{r}
+# Clusters en matemáticas y lectura
+plot(scores$Math,scores$Reading,col=km_res$cluster, main="K-means - Dos clusters", 
+     xlab = "Puntuación en matemáticas", ylab = "Puntuación en lectura")
+
+# Clusters en matemáticas y redacción
+plot(scores$Math,scores$Writing,col=km_res$cluster, main="K-means - Dos clusters", 
+     xlab = "Puntuación en matemáticas", ylab = "Puntuación en redacción")
+
+# Clusters en lectura y redacción
+plot(scores$Reading,scores$Writing,col=km_res$cluster, main="K-means - Dos clusters", 
+     xlab = "Puntuación en lectura", ylab = "Puntuación en redacción")
+```
+
+### Medición de resultados
+
+Vamos a medir la efectividad de nuestros resultados mediante la silueta de nuestros clusters.
+
+```{r}
+sil <- silhouette(km_res$cluster, dist(scores))
+head(sil[, 1:3], 10)
+```
+
+```{r}
+fviz_silhouette(sil)
+```
+
+En el gráfico se puede observar que la silueta media es 0,47 y que la silueta tiende a 1, por lo que se han clasificado los datos correctamente. De la misma manera, no se observa ningún valor con silueta negativa, por lo que todos están clasificados en el clúster correcto.

@@ -16,11 +16,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ## 0. Paquetes de R
 
 ```{r}
-# Instalamos e iniamos el paquete tidyverse
+# Instalamos e iniciamos el paquete tidyverse
 #install.packages("tidyverse")
 library(tidyverse)
 
-# Instalamos e iniamos el paquete mice
+# Instalamos e iniciamos el paquete mice
 #install.packages("mice")
 library(mice)
 ```
@@ -35,7 +35,7 @@ Por lo tanto, el resto de funciones están o creadas para este caso o incluidas 
 Extramos el data frame del archivo .csv:
 
 ```{r}
-df<-read.csv("./data/StudentsPerformance.csv",stringsAsFactors = TRUE
+df<-read.csv("./StudentsPerformance.csv",stringsAsFactors = TRUE
              , na.strings = "", header = TRUE)
 ```
 
@@ -202,6 +202,8 @@ pct_prep <- as.data.frame(pct_prep)
 
 knitr::kable(pct_prep)
 ```
+
+Tras obtener todos los porcentajes relativos a los factores, los mostramos de manera conjunta.
 
 ```{r}
 # Modificación de los parámetros gráficos
@@ -550,7 +552,7 @@ lunch_tests <- as.data.frame(lunch_tests)
 knitr::kable(lunch_tests)
 ```
 
-Como se puede comprobar al ver los datos, la mayoría de las personas que han aprobado en cada uno de los tests ha tenido un almuerzo normal antes del examen, dando a entender de que se trata de la opción preferible sobre tener un almuerzo reducido.
+Como se puede comprobar al ver los datos, la mayoría de las personas que han aprobado en cada uno de los tests ha tenido un almuerzo normal antes del examen.
 
 ```{r}
 par(mar = c(5,4,4,7))
@@ -595,7 +597,7 @@ preparation_tests <- as.data.frame(preparation_tests)
 knitr::kable(preparation_tests)
 ```
 
-Como se puede observar, la mayor parte de los estudiantes que han superado los tests se tratan de personas que nos se los han preparado, con una diferencia aproximada de unos 200 estudiantes en cada uno de los tests.
+Como se puede observar, la mayor parte de los estudiantes que han superado los tests se tratan de personas que no han recibido preparación previa, siguiendo la tendecia del número global de cada una de estas categorías.
 
 ```{r}
 par(mar = c(5,4,4,10))
@@ -646,7 +648,7 @@ gender_avg_score <- as.data.frame(gender_avg_score)
 knitr::kable(gender_avg_score)
 ```
 
-Los resultados obtenidos son semejantes al del número de aprobados por género, la media de las mujeres en lectura y redacción es superior, pero en matemáticas los hombres tienen una media superior.
+Como se puede observar, la media de las mujeres en lectura y redacción es superior, pero en matemáticas los hombres tienen una media superior.
 
 ```{r}
 par(mar = c(5,4,4,8))
@@ -693,7 +695,7 @@ ethnicity_avg_score <- as.data.frame(ethnicity_avg_score)
 knitr::kable(ethnicity_avg_score)
 ```
 
-Como se puede observar, el grupo que ha obtenido la mejor media en todas los tests es el grupo e, seguido por d, c, b y a, en ese orden. Cabe destacar también que cada grupo ha obtenido una media similar en cada uno de los tests.
+Como se puede observar, el grupo que ha obtenido la mejor media en todas los tests es el grupo e, seguido por d, c, b y a, en ese orden. Cabe destacar también que cada grupo ha obtenido la peor media en matemáticas excepto el grupo e.
 
 ```{r}
 par(mar = c(5,4,4,10))
@@ -741,7 +743,7 @@ parent_avg_score <- as.data.frame(parent_avg_score)
 knitr::kable(parent_avg_score)
 ```
 
-Como se puede observar, los valores obtenidos son proporcionales a la cantidad de personas total que forma cada grupo. De la misma manera, hay una cantidad similar de perrsonas que han aprobado en cada uno de los tests por cada uno de los niveles de educación.
+Como se puede observar, las medias obtenidas en lectura y redacción son similares en dentro de cada grupo, teniendo normalmente una mayor diferencia con matemáticas.
 
 ```{r}
 par(mar = c(5,4,4,8))
@@ -835,7 +837,7 @@ preparation_avg_score <- as.data.frame(preparation_avg_score)
 knitr::kable(preparation_avg_score)
 ```
 
-Como se puede observar, los estudiantes con preparación previa han obtenido de media mejores resultados en todos los tests, aunque hay una mayor diferencia con matemáticas respecto al resto.
+Como se puede observar, los estudiantes con preparación previa han obtenido de media mejores resultados en todos los tests, aunque hay una mayor diferencia con matemáticas respecto al de tests.
 
 ```{r}
 par(mar = c(5,4,4,10))
@@ -922,7 +924,7 @@ Como se puede obsevar de los resultados de ambas funciones, en nuestro data fram
 
 ### 3.2. Valores duplicados
 
-Vamos a continuar con la búsqueda de filas duplicadas utilizando la función "duplicated". Como esta función nos devueve una lista de booleanos, para poder revisarla automáticamente se ha creado la siguiente función:
+Vamos a continuar con la búsqueda de filas duplicadas utilizando la función "duplicated". Como esta función nos devuelve una lista de booleanos, para poder revisarla automáticamente se ha creado la siguiente función:
 
 ```{r}
 find_duplicated = function(data){
@@ -1150,7 +1152,7 @@ Antes de terminar con este apartado, vamos a guardar de nuevo nuestro data frame
 ```{r}
 save(final_data, file = "final_data.RData")
 
-write.csv(final_data,"./data/Prep_StudentsPerformance.csv", row.names = FALSE)
+write.csv(final_data,"./Prep_StudentsPerformance.csv", row.names = FALSE)
 ```
 
 ## 4. Transformación
